@@ -35,20 +35,16 @@ const initKeycloak = async () => {
 
   try {
     // まず現在の URL にクエリパラメータが含まれているか確認
-    if (window.location.search) {
-      console.log("URL には認証パラメータが含まれています:", window.location.search);
-    }
-
-    // Keycloak の初期化
+    // Keycloak の初期化オプションを修正
     const authenticated = await keycloak.init({
       pkceMethod: "S256",
       responseMode: "query",
       flow: "standard",
-      checkLoginIframe: false,
       enableLogging: true,
+      onLoad: "login-required",
       useNonce: true,
       scope: "openid email profile",
-      redirectUri: "http://localhost:3000/profile",
+      redirectUri: window.location.origin + '/profile',
     });
 
     const authStore = useAuthStore();
@@ -66,16 +62,6 @@ const initKeycloak = async () => {
         console.log("新しい URL:", window.location.href);
       }
     }, 500);  // 500ms 待ってから実行
-
-    // トークンの自動更新設定
-    if (authenticated) {
-      setInterval(() => {
-        keycloak.updateToken(70).catch(() => {
-          console.error('Failed to refresh token');
-          authStore.logout();
-        });
-      }, 60000);
-    }
 
     // ルートガード設定
     router.beforeEach((to, from, next) => {
